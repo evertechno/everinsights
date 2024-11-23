@@ -8,7 +8,6 @@ import nltk
 from nltk.corpus import stopwords
 from collections import Counter
 from wordcloud import WordCloud
-from sklearn.feature_extraction.text import TfidfVectorizer
 from fpdf import FPDF
 import langdetect
 
@@ -31,58 +30,13 @@ features = {
     "key_phrases": st.sidebar.checkbox("Extract Key Phrases"),
     "actionable_items": st.sidebar.checkbox("Extract Actionable Items"),
     "root_cause": st.sidebar.checkbox("Root Cause Detection"),
-    "culprit_identification": st.sidebar.checkbox("Culprit Identification"),
-    "trend_analysis": st.sidebar.checkbox("Trend Analysis"),
     "risk_assessment": st.sidebar.checkbox("Risk Assessment"),
     "severity_detection": st.sidebar.checkbox("Severity Detection"),
     "critical_keywords": st.sidebar.checkbox("Critical Keyword Identification"),
-    "export": st.sidebar.checkbox("Export Options"),
-    "sentiment_analysis_report": st.sidebar.checkbox("Sentiment Analysis Report"),
+    "export": st.sidebar.checkbox("Export Insights"),
     "email_summary": st.sidebar.checkbox("Email Summary"),
     "language_detection": st.sidebar.checkbox("Language Detection"),
-    "topic_modeling": st.sidebar.checkbox("Topic Modeling"),
     "entity_recognition": st.sidebar.checkbox("Entity Recognition"),
-    "action_item_prioritization": st.sidebar.checkbox("Action Item Prioritization"),
-    "email_classification": st.sidebar.checkbox("Email Classification"),
-    "correlation_analysis": st.sidebar.checkbox("Correlation Analysis"),
-    "time_analysis": st.sidebar.checkbox("Time-based Trend Analysis"),
-    "social_network_analysis": st.sidebar.checkbox("Social Network Analysis"),
-    "email_thread_analysis": st.sidebar.checkbox("Email Thread Analysis"),
-    "duplicate_detection": st.sidebar.checkbox("Duplicate Email Detection"),
-    "language_translation": st.sidebar.checkbox("Language Translation"),
-    "conversation_context": st.sidebar.checkbox("Conversation Context Extraction"),
-    "action_plan": st.sidebar.checkbox("Generate Action Plan"),
-    "feedback_analysis": st.sidebar.checkbox("Feedback Analysis"),
-    "toxic_content_detection": st.sidebar.checkbox("Toxic Content Detection"),
-    "auto_summary": st.sidebar.checkbox("Automatic Summary Generation"),
-    "confusion_matrix": st.sidebar.checkbox("Confusion Matrix for Classification"),
-    "data_visualization": st.sidebar.checkbox("Data Visualization"),
-    "alert_generation": st.sidebar.checkbox("Alert Generation"),
-    "decision_tree_analysis": st.sidebar.checkbox("Decision Tree Analysis"),
-    "clustering_analysis": st.sidebar.checkbox("Clustering Analysis"),
-    "email_composition": st.sidebar.checkbox("Email Composition Assistance"),
-    "text_similarity": st.sidebar.checkbox("Text Similarity Analysis"),
-    "multilingual_support": st.sidebar.checkbox("Multilingual Email Support"),
-    "feedback_score_analysis": st.sidebar.checkbox("Feedback Score Analysis"),
-    "email_length_analysis": st.sidebar.checkbox("Email Length Analysis"),
-    "suggested_improvements": st.sidebar.checkbox("Suggested Improvements"),
-    "action_plan_export": st.sidebar.checkbox("Export Action Plan"),
-    "email_responder": st.sidebar.checkbox("Email Responder Suggestions"),
-    "user_experience_analysis": st.sidebar.checkbox("User Experience Analysis"),
-    "data_trend_forecasting": st.sidebar.checkbox("Data Trend Forecasting"),
-    "time_to_resolution_analysis": st.sidebar.checkbox("Time to Resolution Analysis"),
-    "contact_frequency_analysis": st.sidebar.checkbox("Contact Frequency Analysis"),
-    "response_time_analysis": st.sidebar.checkbox("Response Time Analysis"),
-    "sentiment_trend_analysis": st.sidebar.checkbox("Sentiment Trend Analysis"),
-    "emotion_detection": st.sidebar.checkbox("Emotion Detection"),
-    "follow_up_action_items": st.sidebar.checkbox("Follow-up Action Items"),
-    "escalation_analysis": st.sidebar.checkbox("Escalation Analysis"),
-    "case_priority_assessment": st.sidebar.checkbox("Case Priority Assessment"),
-    "actionable_feedback_detection": st.sidebar.checkbox("Actionable Feedback Detection"),
-    "email_type_classification": st.sidebar.checkbox("Email Type Classification"),
-    "resolution_efficiency_analysis": st.sidebar.checkbox("Resolution Efficiency Analysis"),
-    "message_parsing": st.sidebar.checkbox("Message Parsing"),
-    "performance_metrics_analysis": st.sidebar.checkbox("Performance Metrics Analysis"),
 }
 
 # Input Email Section
@@ -152,18 +106,6 @@ def extract_actionable_items(text):
 def detect_root_cause(text):
     return "Possible root cause: Lack of clear communication in the process."
 
-# Culprit Identification
-def identify_culprit(text):
-    if "manager" in text.lower():
-        return "Culprit: The manager might be responsible."
-    elif "team" in text.lower():
-        return "Culprit: The team might be responsible."
-    return "Culprit: Unknown"
-
-# Trend Analysis
-def analyze_trends(text):
-    return "Trend detected: Delay in project timelines."
-
 # Risk Assessment
 def assess_risk(text):
     return "Risk assessment: High risk due to delayed communication."
@@ -193,16 +135,6 @@ def entity_recognition(text):
     entities = ["Email", "Action", "Team", "Manager"]
     return entities
 
-# Action Item Prioritization
-def prioritize_action_items(items):
-    return sorted(items, key=lambda x: len(x), reverse=True)
-
-# Email Classification (dummy)
-def classify_email(text):
-    if "urgent" in text.lower():
-        return "High priority"
-    return "Normal priority"
-
 # Visualizing Word Frequency
 def visualize_word_frequency(word_counts):
     plt.figure(figsize=(10, 5))
@@ -210,14 +142,6 @@ def visualize_word_frequency(word_counts):
     plt.xticks(rotation=45)
     plt.title("Word Frequency")
     plt.tight_layout()
-
-# Clustering Analysis (dummy)
-def clustering_analysis(text):
-    return "Clustering completed using K-Means"
-
-# Email Length Analysis
-def analyze_email_length(text):
-    return f"Email length: {len(text)} characters"
 
 # Exporting Insights as JSON, Text, and PDF
 def export_insights(text_data, summary):
@@ -293,16 +217,6 @@ if email_content and st.button("Generate Insights"):
             root_cause = detect_root_cause(email_content)
             st.subheader("Root Cause Detection")
             st.write(root_cause)
-
-        if features["culprit_identification"]:
-            culprit = identify_culprit(email_content)
-            st.subheader("Culprit Identification")
-            st.write(culprit)
-
-        if features["trend_analysis"]:
-            trends = analyze_trends(email_content)
-            st.subheader("Trend Analysis")
-            st.write(trends)
 
         if features["risk_assessment"]:
             risk = assess_risk(email_content)
