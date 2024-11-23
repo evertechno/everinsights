@@ -5,3 +5,4 @@ fpdf
 matplotlib
 scikit-learn 
 wordcloud
+langdetect
