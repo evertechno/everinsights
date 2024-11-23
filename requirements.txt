@@ -1,1 +1,7 @@
-streamlit
+streamlit 
+google-generativeai 
+nltk 
+fpdf
+matplotlib
+scikit-learn 
+wordcloud
