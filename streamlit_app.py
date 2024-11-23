@@ -10,9 +10,19 @@ from collections import Counter
 from wordcloud import WordCloud
 from fpdf import FPDF
 import langdetect
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+import base64
+import hashlib
+import os
+from datetime import datetime
+from typing import List
 
 # Configure API Key securely from Streamlit's secrets
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+
+# AES Encryption Key (ensure secure handling of the key in production)
+ENCRYPTION_KEY = st.secrets["ENCRYPTION_KEY"]
 
 # App Configuration
 st.set_page_config(page_title="Escalytics", page_icon="📧", layout="wide")
@@ -33,211 +43,206 @@ features = {
     "risk_assessment": st.sidebar.checkbox("Risk Assessment"),
     "severity_detection": st.sidebar.checkbox("Severity Detection"),
     "critical_keywords": st.sidebar.checkbox("Critical Keyword Identification"),
-    "export": st.sidebar.checkbox("Export Insights"),
+    "escalation_trigger": st.sidebar.checkbox("Escalation Trigger Detection"),
+    "culprit_identification": st.sidebar.checkbox("Culprit Identification"),
     "email_summary": st.sidebar.checkbox("Email Summary"),
     "language_detection": st.sidebar.checkbox("Language Detection"),
     "entity_recognition": st.sidebar.checkbox("Entity Recognition"),
+    # New features added:
+    "sla_breach": st.sidebar.checkbox("Detect SLA Breach"),
+    "prioritization": st.sidebar.checkbox("Prioritize Issues"),
+    "resolution_time": st.sidebar.checkbox("Predict Resolution Time"),
+    "stakeholder_identification": st.sidebar.checkbox("Identify Stakeholders"),
+    "escalation_levels": st.sidebar.checkbox("Define Escalation Levels"),
+    "performance_metrics": st.sidebar.checkbox("Extract Performance Metrics"),
+    "resolution_recommendations": st.sidebar.checkbox("Suggest Resolutions"),
+    "project_impact": st.sidebar.checkbox("Identify Project Impact"),
+    "compliance_check": st.sidebar.checkbox("Check Compliance Issues"),
+    "incident_tracking": st.sidebar.checkbox("Track Incident Numbers"),
+    "customer_satisfaction": st.sidebar.checkbox("Predict Customer Satisfaction"),
+    "feedback_loop": st.sidebar.checkbox("Identify Feedback Loops"),
+    "automated_response": st.sidebar.checkbox("Generate Automated Responses"),
+    "contractual_obligations": st.sidebar.checkbox("Identify Contractual Obligations"),
+    "root_cause_frequency": st.sidebar.checkbox("Analyze Root Cause Frequency"),
+    "budget_impact": st.sidebar.checkbox("Analyze Budget Impact"),
+    "vendor_management": st.sidebar.checkbox("Extract Vendor Information"),
+    "supply_chain_issues": st.sidebar.checkbox("Identify Supply Chain Issues"),
+    "service_request": st.sidebar.checkbox("Categorize Service Requests"),
+    "ticket_escalation": st.sidebar.checkbox("Track Ticket Escalations"),
+    "operational_impact": st.sidebar.checkbox("Identify Operational Impact"),
+    "regulatory_alerts": st.sidebar.checkbox("Detect Regulatory Alerts"),
+    "risk_mitigation": st.sidebar.checkbox("Suggest Risk Mitigation"),
+    "business_continuity": st.sidebar.checkbox("Business Continuity Analysis"),
+    "market_sentiment": st.sidebar.checkbox("Extract Market Sentiment")
 }
 
-# Input Email Section
-email_content = st.text_area("Paste your email content here:", height=200)
+# Encryption/Decryption utility functions
+def encrypt_data(data: str) -> str:
+    """Encrypt data using AES encryption"""
+    iv = os.urandom(16)
+    cipher = Cipher(algorithms.AES(ENCRYPTION_KEY), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    padded_data = data + (16 - len(data) % 16) * " "  # Pad data to be multiple of block size
+    encrypted = encryptor.update(padded_data.encode()) + encryptor.finalize()
+    return base64.b64encode(iv + encrypted).decode('utf-8')
 
-MAX_EMAIL_LENGTH = 1000
+def decrypt_data(encrypted_data: str) -> str:
+    """Decrypt data using AES decryption"""
+    encrypted_data_bytes = base64.b64decode(encrypted_data)
+    iv = encrypted_data_bytes[:16]
+    encrypted = encrypted_data_bytes[16:]
+    cipher = Cipher(algorithms.AES(ENCRYPTION_KEY), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    decrypted = decryptor.update(encrypted) + decryptor.finalize()
+    return decrypted.decode('utf-8').strip()
 
-# Cache the AI responses to improve performance
+# App function to get AI response
 @st.cache_data(ttl=3600)
-def get_ai_response(prompt, email_content):
+def get_ai_response(prompt: str, email_content: str) -> str:
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(prompt + email_content[:MAX_EMAIL_LENGTH])
+        response = model.generate_content(prompt + email_content)
         return response.text.strip()
     except Exception as e:
         st.error(f"Error: {e}")
         return ""
 
-# Sentiment Analysis
-def get_sentiment(email_content):
-    positive_keywords = ["happy", "good", "great", "excellent", "love"]
-    negative_keywords = ["sad", "bad", "hate", "angry", "disappointed"]
-    sentiment_score = 0
-    for word in email_content.split():
-        if word.lower() in positive_keywords:
-            sentiment_score += 1
-        elif word.lower() in negative_keywords:
-            sentiment_score -= 1
-    return sentiment_score
+# Features and Analysis Functions
 
-# Grammar Check (basic spelling correction)
-def grammar_check(text):
-    corrections = {
-        "recieve": "receive",
-        "adress": "address",
-        "teh": "the",
-        "occured": "occurred"
-    }
-    for word, correct in corrections.items():
-        text = text.replace(word, correct)
-    return text
+# SLA Breach Detection
+def detect_sla_breach(text: str) -> str:
+    if "SLA" in text and ("breach" in text or "violation" in text):
+        return "SLA Breach Detected: Immediate attention required."
+    return "No SLA breach detected."
 
-# Key Phrase Extraction
-def extract_key_phrases(text):
-    key_phrases = re.findall(r"\b[A-Za-z]{4,}\b", text)
-    return list(set(key_phrases))  # Remove duplicates
+# Issue Prioritization
+def prioritize_issues(text: str) -> str:
+    if "urgent" in text or "critical" in text:
+        return "Priority: High"
+    return "Priority: Normal"
 
-# Word Cloud Generation
-def generate_wordcloud(text):
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
-    return wordcloud
+# Resolution Time Prediction (Dummy example)
+def predict_resolution_time(text: str) -> str:
+    if "complex" in text:
+        return "Estimated Resolution Time: 48 hours"
+    return "Estimated Resolution Time: 24 hours"
 
-# Export to PDF
-def export_pdf(text):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, text)
-    return pdf.output(dest='S').encode('latin1')
+# Stakeholder Identification
+def identify_stakeholders(text: str) -> List[str]:
+    stakeholders = re.findall(r"\b[A-Z][a-z]+(?: [A-Z][a-z]+)*\b", text)
+    return stakeholders
 
-# Actionable Items Extraction
-def extract_actionable_items(text):
-    actions = [line for line in text.split("\n") if "to" in line.lower() or "action" in line.lower()]
-    return actions
+# Escalation Level Definition
+def define_escalation_level(text: str) -> str:
+    if "critical" in text:
+        return "Escalation Level: Level 3"
+    elif "high" in text:
+        return "Escalation Level: Level 2"
+    return "Escalation Level: Level 1"
+
+# Performance Metrics Extraction
+def extract_performance_metrics(text: str) -> str:
+    metrics = ["performance", "efficiency", "output", "target", "goal"]
+    found_metrics = [metric for metric in metrics if metric in text.lower()]
+    return ", ".join(found_metrics) if found_metrics else "No performance metrics found."
 
 # Root Cause Detection
-def detect_root_cause(text):
-    return "Possible root cause: Lack of clear communication in the process."
+def detect_root_cause(text: str) -> str:
+    if "system failure" in text:
+        return "Root Cause: System failure"
+    return "Root Cause: Not identified"
 
-# Risk Assessment
-def assess_risk(text):
-    return "Risk assessment: High risk due to delayed communication."
+# Root Cause Frequency Analysis
+def analyze_root_cause_frequency(text: str) -> str:
+    root_causes = ["network issue", "software bug", "hardware failure"]
+    cause_counts = {cause: text.lower().count(cause) for cause in root_causes}
+    return json.dumps(cause_counts)
 
-# Severity Detection
-def detect_severity(text):
-    if "urgent" in text.lower():
-        return "Severity: High"
-    return "Severity: Normal"
+# Automated Response Suggestions
+def generate_response(text: str) -> str:
+    if "urgent" in text:
+        return "Response: We are addressing the issue urgently and will update you shortly."
+    return "Response: Thank you for your feedback, we are looking into it."
 
-# Critical Keyword Identification
-def identify_critical_keywords(text):
-    critical_keywords = ["urgent", "problem", "issue", "failure"]
-    critical_terms = [word for word in text.split() if word.lower() in critical_keywords]
-    return critical_terms
-
-# Language Detection
-def detect_language(text):
+# Function to handle file upload and process content
+def handle_uploaded_file(uploaded_file) -> str:
     try:
-        lang = langdetect.detect(text)
-        return lang
+        if uploaded_file is not None:
+            email_content = uploaded_file.read().decode("utf-8")
+            return email_content
     except Exception as e:
-        return "Unknown"
+        st.error(f"Error while reading file: {e}")
+    return ""
 
-# Entity Recognition (dummy for illustration)
-def entity_recognition(text):
-    entities = ["Email", "Action", "Team", "Manager"]
-    return entities
+# Main logic for processing email content
+email_content = ""
+if uploaded_file := st.file_uploader("Upload Email Content", type=["txt", "docx", "pdf"]):
+    email_content = handle_uploaded_file(uploaded_file)
 
-# Visualizing Word Frequency
-def visualize_word_frequency(word_counts):
-    plt.figure(figsize=(10, 5))
-    plt.bar(word_counts.keys(), word_counts.values())
-    plt.xticks(rotation=45)
-    plt.title("Word Frequency")
-    plt.tight_layout()
-
-# Exporting Insights as JSON, Text, and PDF
-def export_insights(text_data, summary):
-    pdf_buffer = BytesIO(export_pdf(text_data))
-    buffer_txt = BytesIO(text_data.encode("utf-8"))
-    buffer_json = BytesIO(json.dumps(summary, indent=4).encode("utf-8"))
-    st.download_button("Download as Text", data=buffer_txt, file_name="analysis.txt", mime="text/plain")
-    st.download_button("Download as PDF", data=pdf_buffer, file_name="analysis.pdf", mime="application/pdf")
-    st.download_button("Download as JSON", data=buffer_json, file_name="analysis.json", mime="application/json")
-
-# File upload for email content
-uploaded_file = st.file_uploader("Upload Email File", type=["txt", "eml"])
-
-if uploaded_file is not None:
-    email_content = uploaded_file.read().decode("utf-8")
-
-# Layout for displaying results
-if email_content and st.button("Generate Insights"):
+if email_content:
     try:
-        # Generate AI-like responses (using google.generativeai for content generation)
-        summary = get_ai_response("Summarize the email in a concise, actionable format:\n\n", email_content)
-        response = get_ai_response("Draft a professional response to this email:\n\n", email_content) if features["response"] else ""
-        highlights = get_ai_response("Highlight key points and actions in this email:\n\n", email_content) if features["highlights"] else ""
-
-        # Sentiment Analysis
-        sentiment = get_sentiment(email_content)
-        sentiment_label = "Positive" if sentiment > 0 else "Negative" if sentiment < 0 else "Neutral"
-
-        # Generate Word Cloud
-        wordcloud = generate_wordcloud(email_content)
-        wordcloud_fig = plt.figure(figsize=(10, 5))
-        plt.imshow(wordcloud, interpolation="bilinear")
-        plt.axis("off")
-        plt.show()
-
-        # Display Results
-        st.subheader("AI Summary")
-        st.write(summary)
-
-        if features["response"]:
-            st.subheader("Suggested Response")
-            st.write(response)
+        # Encrypt sensitive email content
+        encrypted_email = encrypt_data(email_content)
+        decrypted_email = decrypt_data(encrypted_email)
+        
+        if features["sentiment"]:
+            sentiment = get_ai_response("Sentiment analysis for this email: ", decrypted_email)
+            st.subheader("Sentiment Analysis")
+            st.write(sentiment)
 
         if features["highlights"]:
-            st.subheader("Key Highlights")
+            highlights = get_ai_response("Highlight key phrases from this email: ", decrypted_email)
+            st.subheader("Key Phrases Highlighted")
             st.write(highlights)
+        
+        if features["sla_breach"]:
+            sla_breach = detect_sla_breach(decrypted_email)
+            st.subheader("SLA Breach Detection")
+            st.write(sla_breach)
+        
+        if features["prioritization"]:
+            prioritization = prioritize_issues(decrypted_email)
+            st.subheader("Issue Prioritization")
+            st.write(prioritization)
+        
+        if features["resolution_time"]:
+            resolution_time = predict_resolution_time(decrypted_email)
+            st.subheader("Resolution Time Prediction")
+            st.write(resolution_time)
 
-        st.subheader("Sentiment Analysis")
-        st.write(f"**Sentiment:** {sentiment_label} (Score: {sentiment})")
+        # Add additional features based on the selected features
+        if features["stakeholder_identification"]:
+            stakeholders = identify_stakeholders(decrypted_email)
+            st.subheader("Stakeholders Identified")
+            st.write(stakeholders)
 
-        if features["grammar_check"]:
-            corrected_text = grammar_check(email_content)
-            st.subheader("Grammar Check")
-            st.write("Corrected Text:")
-            st.write(corrected_text)
+        if features["escalation_levels"]:
+            escalation_level = define_escalation_level(decrypted_email)
+            st.subheader("Escalation Level")
+            st.write(escalation_level)
 
-        if features["key_phrases"]:
-            key_phrases = extract_key_phrases(email_content)
-            st.subheader("Key Phrases Extracted")
-            st.write(key_phrases)
+        if features["performance_metrics"]:
+            performance_metrics = extract_performance_metrics(decrypted_email)
+            st.subheader("Performance Metrics")
+            st.write(performance_metrics)
 
-        if features["wordcloud"]:
-            st.subheader("Word Cloud")
-            st.pyplot(wordcloud_fig)
-
-        if features["actionable_items"]:
-            actionable_items = extract_actionable_items(email_content)
-            st.subheader("Actionable Items")
-            st.write(actionable_items)
-
-        # RCA and Insights Features
         if features["root_cause"]:
-            root_cause = detect_root_cause(email_content)
+            root_cause = detect_root_cause(decrypted_email)
             st.subheader("Root Cause Detection")
             st.write(root_cause)
+        
+        if features["root_cause_frequency"]:
+            root_cause_frequency = analyze_root_cause_frequency(decrypted_email)
+            st.subheader("Root Cause Frequency")
+            st.write(root_cause_frequency)
 
-        if features["risk_assessment"]:
-            risk = assess_risk(email_content)
-            st.subheader("Risk Assessment")
-            st.write(risk)
-
-        if features["severity_detection"]:
-            severity = detect_severity(email_content)
-            st.subheader("Severity Detection")
-            st.write(severity)
-
-        if features["critical_keywords"]:
-            critical_terms = identify_critical_keywords(email_content)
-            st.subheader("Critical Keywords Identified")
-            st.write(critical_terms)
-
-        # Export options
-        export_content = f"Summary:\n{summary}\n\nResponse:\n{response}\n\nHighlights:\n{highlights}\n\nSentiment Analysis: {sentiment_label} (Score: {sentiment})"
-        export_insights(export_content, {"summary": summary, "response": response, "highlights": highlights, "sentiment": sentiment_label})
+        if features["automated_response"]:
+            automated_response = generate_response(decrypted_email)
+            st.subheader("Automated Response Suggestion")
+            st.write(automated_response)
 
     except Exception as e:
         st.error(f"Error: {e}")
 else:
-    st.info("Paste email content or upload an email file and click 'Generate Insights' to start.")
+    st.info("Upload or paste email content to get insights.")
+
