@@ -10,6 +10,7 @@ from collections import Counter
 from wordcloud import WordCloud
 from sklearn.feature_extraction.text import TfidfVectorizer
 from fpdf import FPDF
+import langdetect
 
 # Configure API Key securely from Streamlit's secrets
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
@@ -181,7 +182,11 @@ def identify_critical_keywords(text):
 
 # Language Detection
 def detect_language(text):
-    return "English"  # Placeholder, integrate with a language detection API like langdetect
+    try:
+        lang = langdetect.detect(text)
+        return lang
+    except Exception as e:
+        return "Unknown"
 
 # Entity Recognition (dummy for illustration)
 def entity_recognition(text):
@@ -222,6 +227,12 @@ def export_insights(text_data, summary):
     st.download_button("Download as Text", data=buffer_txt, file_name="analysis.txt", mime="text/plain")
     st.download_button("Download as PDF", data=pdf_buffer, file_name="analysis.pdf", mime="application/pdf")
     st.download_button("Download as JSON", data=buffer_json, file_name="analysis.json", mime="application/json")
+
+# File upload for email content
+uploaded_file = st.file_uploader("Upload Email File", type=["txt", "eml"])
+
+if uploaded_file is not None:
+    email_content = uploaded_file.read().decode("utf-8")
 
 # Layout for displaying results
 if email_content and st.button("Generate Insights"):
@@ -315,4 +326,4 @@ if email_content and st.button("Generate Insights"):
     except Exception as e:
         st.error(f"Error: {e}")
 else:
-    st.info("Paste email content and click 'Generate Insights' to start.")
+    st.info("Paste email content or upload an email file and click 'Generate Insights' to start.")
